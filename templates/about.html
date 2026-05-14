@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}About{% endblock %}
+{% block content %}
+<section class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card border-0 shadow-lg overflow-hidden about-hero mb-4">
+            <div class="card-body p-4 p-lg-5 text-center text-lg-start">
+                <p class="text-uppercase small fw-semibold text-primary mb-2">About the product</p>
+                <h1 class="display-6 fw-bold mb-3">What is <span class="brand-gradient">ScrapIQ</span>?</h1>
+                <p class="lead text-secondary mb-0">
+                    ScrapIQ is an intelligent, educational web scraping assistant that turns public HTML pages into structured insights you can explore, archive, and export.
+                </p>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="card h-100 border-0 shadow-sm card-hover">
+                    <div class="card-body p-4">
+                        <div class="icon-pill mb-3"><i class="bi bi-bullseye"></i></div>
+                        <h2 class="h5 fw-bold">Mission</h2>
+                        <p class="text-secondary small mb-0">
+                            Help students and analysts quickly understand how a page is built: semantics, metadata, media references, and lightweight SEO signals — without writing custom parsers for every assignment.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card h-100 border-0 shadow-sm card-hover">
+                    <div class="card-body p-4">
+                        <div class="icon-pill mb-3"><i class="bi bi-shield-check"></i></div>
+                        <h2 class="h5 fw-bold">Responsible use</h2>
+                        <p class="text-secondary small mb-0">
+                            Only scrape sites you own or are permitted to access. Respect <code>robots.txt</code>, terms of service, and rate limits. ScrapIQ is a learning tool, not a bypass for protections.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card h-100 border-0 shadow-sm card-hover">
+                    <div class="card-body p-4">
+                        <div class="icon-pill mb-3"><i class="bi bi-cpu"></i></div>
+                        <h2 class="h5 fw-bold">How it works</h2>
+                        <p class="text-secondary small mb-0">
+                            Flask receives your URL, <strong>requests</strong> fetches the response, and <strong>BeautifulSoup</strong> with the <strong>lxml</strong> parser walks the DOM. Text is analyzed with regular expressions and simple NLP-style token counting.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card h-100 border-0 shadow-sm card-hover">
+                    <div class="card-body p-4">
+                        <div class="icon-pill mb-3"><i class="bi bi-database"></i></div>
+                        <h2 class="h5 fw-bold">Persistence</h2>
+                        <p class="text-secondary small mb-0">
+                            Each successful scrape is stored in <strong>SQLite</strong> as JSON for fast replays, history search, and <strong>pandas</strong>-powered CSV exports for spreadsheets or grading rubrics.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center mt-5">
+            <a href="{{ url_for('index') }}" class="btn btn-primary btn-lg rounded-pill px-4">
+                <i class="bi bi-lightning-charge-fill me-2"></i>Try ScrapIQ now
+            </a>
+        </div>
+    </div>
+</section>
+{% endblock %}

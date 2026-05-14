@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}History{% endblock %}
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+    <div>
+        <h1 class="h3 fw-bold mb-1">Scrape history</h1>
+        <p class="text-secondary mb-0 small">SQLite table <code class="small">history</code> — up to {{ HISTORY_LIST_LIMIT }} recent runs, newest first.</p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a href="{{ url_for('index') }}" class="btn btn-primary rounded-pill">
+            <i class="bi bi-plus-lg me-1"></i>New scrape
+        </a>
+        <form method="post" action="{{ url_for('history_clear_all') }}" class="d-inline"
+              onsubmit="return confirm('Delete ALL history entries? This cannot be undone.');">
+            <button type="submit" class="btn btn-outline-danger rounded-pill">
+                <i class="bi bi-trash3 me-1"></i>Clear all
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-4">
+        <form class="row g-2 align-items-center" method="get" action="{{ url_for('history') }}">
+            <div class="col-md-8">
+                <div class="input-group">
+                    <span class="input-group-text bg-transparent"><i class="bi bi-search"></i></span>
+                    <input type="search" class="form-control" name="q" value="{{ q }}" placeholder="Search by URL or title…" autocomplete="off">
+                </div>
+            </div>
+            <div class="col-md-4 d-flex gap-2">
+                <button type="submit" class="btn btn-outline-primary flex-grow-1 rounded-pill">Search</button>
+                {% if q %}
+                    <a href="{{ url_for('history') }}" class="btn btn-outline-secondary rounded-pill">Clear</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="table-responsive rounded-3">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">URL</th>
+                    <th scope="col">Title</th>
+                    <th scope="col" class="d-none d-md-table-cell">First saved</th>
+                    <th scope="col">Last run</th>
+                    <th scope="col" class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                    <tr>
+                        <td class="text-secondary small">{{ row.id }}</td>
+                        <td class="small text-break" style="max-width: 240px;">
+                            <a href="{{ row.url }}" target="_blank" rel="noopener noreferrer">{{ row.url }}</a>
+                        </td>
+                        <td class="small">{{ row.title or '—' }}</td>
+                        <td class="small text-secondary d-none d-md-table-cell text-nowrap">{{ row.created_at or row.scraped_at }}</td>
+                        <td class="small text-secondary text-nowrap">{{ row.scraped_at }}</td>
+                        <td class="text-end text-nowrap">
+                            <a class="btn btn-sm btn-outline-primary rounded-pill" href="{{ url_for('result', scrape_id=row.id) }}">Results</a>
+                            <a class="btn btn-sm btn-outline-secondary rounded-pill" href="{{ url_for('export_csv', scrape_id=row.id) }}" title="Download CSV">
+                                <i class="bi bi-download"></i>
+                            </a>
+                            <form method="post" action="{{ url_for('history_delete_one', entry_id=row.id) }}" class="d-inline"
+                                  onsubmit="return confirm('Remove this history entry?');">
+                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill" title="Delete entry">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center text-secondary py-5">
+                            {% if q %}
+                                No history entries match “{{ q }}”.
+                            {% else %}
+                                No scrapes yet. Run your first analysis from the home page.
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,499 @@
+{% extends "base.html" %}
+{% block title %}Results{% endblock %}
+{% block content %}
+<div class="d-flex flex-column flex-lg-row justify-content-between align-items-start gap-3 mb-4">
+    <div>
+        <h1 class="h3 fw-bold mb-1">Scrape results</h1>
+        <p class="text-secondary mb-0 small">
+            Saved as #{{ data.id }} · Last run: {{ data.scraped_at }}
+            {% if data.created_at and data.created_at != data.scraped_at %}
+                <span class="d-none d-md-inline"> · First saved: {{ data.created_at }}</span>
+            {% endif %}
+        </p>
+        <a href="{{ data.final_url or data.url }}" class="small text-break" target="_blank" rel="noopener noreferrer">
+            <i class="bi bi-box-arrow-up-right me-1" aria-hidden="true"></i>{{ data.final_url or data.url }}
+        </a>
+        {% if data.scrape_mode == 'custom' %}
+            <div class="mt-2 d-flex flex-wrap gap-2 align-items-center">
+                <span class="badge rounded-pill text-bg-primary">Custom extract</span>
+                <span class="badge rounded-pill text-bg-light border">{{ data.category }}</span>
+                {% for sf in data.selected_fields %}
+                    <span class="badge rounded-pill bg-body-secondary text-body">{{ sf|replace('_', ' ') }}</span>
+                {% endfor %}
+                {% if data.fashion_same_dress %}<span class="badge rounded-pill text-bg-info text-dark">Same dress focus</span>{% endif %}
+                {% if data.fashion_similar_dress %}<span class="badge rounded-pill text-bg-info text-dark">Similar dress focus</span>{% endif %}
+            </div>
+        {% endif %}
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <button type="button" class="btn btn-outline-primary rounded-pill" id="copyAllBtn">
+            <i class="bi bi-clipboard me-1"></i>Copy all
+        </button>
+        <a class="btn btn-primary rounded-pill" href="{{ url_for('export_csv', scrape_id=data.id) }}">
+            <i class="bi bi-filetype-csv me-1"></i>Export CSV
+        </a>
+        <a class="btn btn-outline-secondary rounded-pill" href="{{ url_for('history') }}">
+            <i class="bi bi-clock-history me-1"></i>History
+        </a>
+    </div>
+</div>
+
+{% if data.response_truncated %}
+<div class="alert alert-warning border-0 shadow-sm d-flex gap-2 align-items-start mb-4" role="status">
+    <i class="bi bi-scissors flex-shrink-0 mt-1" aria-hidden="true"></i>
+    <div class="small mb-0">This page was very large, so only the first portion of the HTML was downloaded and analyzed. Counts and excerpts may be partial.</div>
+</div>
+{% endif %}
+
+{% if data.scrape_mode == 'custom' %}
+{% set ce = data.custom_extract %}
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card stat-card border-0 shadow-sm h-100 custom-stat-card">
+            <div class="card-body">
+                <div class="text-secondary small">Fields selected</div>
+                <div class="display-6 fw-bold counter" data-target="{{ data.custom_stats.selections|default(data.selected_fields|length) }}">0</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card stat-card border-0 shadow-sm h-100 custom-stat-card">
+            <div class="card-body">
+                <div class="text-secondary small">Data points</div>
+                <div class="display-6 fw-bold counter" data-target="{{ data.custom_stats.data_points|default(0) }}">0</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card stat-card border-0 shadow-sm h-100 custom-stat-card">
+            <div class="card-body">
+                <div class="text-secondary small">Images</div>
+                <div class="display-6 fw-bold counter" data-target="{{ data.counts.images }}">0</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card stat-card border-0 shadow-sm h-100 custom-stat-card">
+            <div class="card-body">
+                <div class="text-secondary small">Links</div>
+                <div class="display-6 fw-bold counter" data-target="{{ data.counts.links }}">0</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        {% if ce.product_names %}
+        <h2 class="h5 fw-bold mb-3"><i class="bi bi-tag me-2 text-primary"></i>Product names</h2>
+        <div class="row row-cols-1 row-cols-md-2 g-3 mb-4">
+            {% for n in ce.product_names %}
+            <div class="col">
+                <div class="card h-100 border-0 shadow-sm custom-pro-card">
+                    <div class="card-body">
+                        <div class="text-primary small text-uppercase fw-semibold mb-1">Name</div>
+                        <div class="fw-semibold">{{ n }}</div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if ce.prices %}
+        <h2 class="h5 fw-bold mb-3"><i class="bi bi-currency-dollar me-2 text-primary"></i>Prices</h2>
+        <div class="d-flex flex-wrap gap-2 mb-4">
+            {% for p in ce.prices %}
+            <span class="badge rounded-pill fs-6 px-3 py-2 price-pill">{{ p }}</span>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if ce.brands %}
+        <h2 class="h5 fw-bold mb-3"><i class="bi bi-shop me-2 text-primary"></i>Brand</h2>
+        <div class="row g-3 mb-4">
+            {% for b in ce.brands %}
+            <div class="col-auto">
+                <div class="card border-0 shadow-sm px-3 py-2 custom-pro-card"><span class="fw-medium">{{ b }}</span></div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if ce.reviews %}
+        <h2 class="h5 fw-bold mb-3"><i class="bi bi-stars me-2 text-primary"></i>Reviews &amp; ratings</h2>
+        <div class="row g-3 mb-4">
+            {% for r in ce.reviews %}
+            <div class="col-12">
+                <div class="card border-0 shadow-sm custom-pro-card"><div class="card-body small">{{ r }}</div></div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if ce.descriptions %}
+        <h2 class="h5 fw-bold mb-3"><i class="bi bi-card-text me-2 text-primary"></i>Descriptions</h2>
+        {% for d in ce.descriptions %}
+        <div class="card border-0 shadow-sm mb-3 custom-pro-card"><div class="card-body text-secondary small">{{ d }}</div></div>
+        {% endfor %}
+        {% endif %}
+
+        {% if ce.images %}
+        <h2 class="h5 fw-bold mb-3"><i class="bi bi-images me-2 text-primary"></i>Images</h2>
+        <div class="row row-cols-2 row-cols-md-3 g-3 mb-4">
+            {% for im in ce.images %}
+            {% if im.src %}
+            <div class="col">
+                <div class="card h-100 border-0 shadow-sm overflow-hidden custom-pro-card">
+                    <div class="ratio ratio-1x1 bg-body-secondary">
+                        <img src="{{ im.src }}" class="object-fit-cover" alt="{{ im.alt or 'Product' }}" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'">
+                    </div>
+                    <div class="card-body small py-2">
+                        <a href="{{ im.src }}" target="_blank" rel="noopener" class="text-break text-truncate d-block">{{ im.src }}</a>
+                        {% if im.alt %}<div class="text-secondary text-truncate mt-1">{{ im.alt }}</div>{% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if ce.similar_items %}
+        <h2 class="h5 fw-bold mb-3"><i class="bi bi-grid-3x3-gap me-2 text-primary"></i>Similar / related items</h2>
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-3 mb-4">
+            {% for it in ce.similar_items %}
+            <div class="col">
+                <div class="card h-100 border-0 shadow-sm custom-pro-card position-relative">
+                    {% if it.image %}
+                    <div class="ratio ratio-4x3 bg-body-secondary">
+                        <img src="{{ it.image }}" alt="" class="object-fit-cover" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentElement.style.display='none'">
+                    </div>
+                    {% endif %}
+                    <div class="card-body d-flex flex-column">
+                        <div class="fw-semibold mb-2 flex-grow-1">{{ it.name }}</div>
+                        <a href="{{ it.href }}" class="btn btn-sm btn-outline-primary rounded-pill align-self-start" target="_blank" rel="noopener">Open</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if ce.links %}
+        <h2 class="h5 fw-bold mb-3"><i class="bi bi-link-45deg me-2 text-primary"></i>Links</h2>
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="table-responsive rounded-3 border">
+                <table class="table table-sm table-hover align-middle mb-0">
+                    <thead class="table-light"><tr><th>Text</th><th>URL</th></tr></thead>
+                    <tbody>
+                        {% for link in ce.links[:DISPLAY_LINKS] %}
+                        <tr>
+                            <td class="small" style="max-width: 200px;">{{ link.text }}</td>
+                            <td class="small text-break"><a href="{{ link.href }}" target="_blank" rel="noopener">{{ link.href }}</a></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if not (ce.product_names or ce.prices or ce.brands or ce.reviews or ce.descriptions or ce.images or ce.similar_items or ce.links) %}
+        <div class="alert alert-info border-0 shadow-sm">No structured fields matched this page for your selection. Try more fields or use <strong>full</strong> mode (no checkboxes on the home page).</div>
+        {% endif %}
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm mb-4 seo-card">
+            <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+                <h2 class="h5 fw-bold mb-0"><i class="bi bi-speedometer2 me-2 text-warning"></i>SEO snapshot</h2>
+            </div>
+            <div class="card-body px-4 pb-4 text-center">
+                <div class="seo-ring mx-auto mb-3" style="--score: {{ data.seo.score }};">
+                    <span>{{ data.seo.score }}</span>
+                </div>
+                <p class="text-secondary small">Based on the text fields returned in this custom run.</p>
+                <ul class="list-group list-group-flush text-start small">
+                    {% for c in data.seo.checks %}
+                    <li class="list-group-item d-flex gap-2 align-items-start px-0">
+                        {% if c.ok %}<i class="bi bi-check-circle-fill text-success mt-1"></i>{% else %}<i class="bi bi-exclamation-circle-fill text-warning mt-1"></i>{% endif %}
+                        <span><strong>{{ c.label }}:</strong> {{ c.detail }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+                <h2 class="h5 fw-bold mb-0"><i class="bi bi-keyboard me-2 text-primary"></i>Top keywords</h2>
+            </div>
+            <div class="card-body px-4 pb-4">
+                {% if data.keywords %}
+                <div class="d-flex flex-wrap gap-2">
+                    {% for kw in data.keywords %}
+                    <span class="badge rounded-pill keyword-pill">{{ kw.word }} <span class="opacity-75">×{{ kw.count }}</span></span>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-secondary small mb-0">Not enough text for keyword insights.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+
+<!-- Stat cards (full mode) -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card stat-card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-secondary small">Links</div>
+                <div class="display-6 fw-bold counter" data-target="{{ data.counts.links }}">0</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card stat-card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-secondary small">Images</div>
+                <div class="display-6 fw-bold counter" data-target="{{ data.counts.images }}">0</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card stat-card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-secondary small">Headings</div>
+                <div class="display-6 fw-bold counter" data-target="{{ data.counts.headings }}">0</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card stat-card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-secondary small">Emails</div>
+                <div class="display-6 fw-bold counter" data-target="{{ data.counts.emails }}">0</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+                <h2 class="h5 fw-bold mb-0"><i class="bi bi-type me-2 text-primary"></i>Page overview</h2>
+            </div>
+            <div class="card-body px-4 pb-4">
+                <dl class="row mb-0">
+                    <dt class="col-sm-3 text-secondary">Title</dt>
+                    <dd class="col-sm-9">{{ data.title or '—' }}</dd>
+                    <dt class="col-sm-3 text-secondary">Meta description</dt>
+                    <dd class="col-sm-9">{{ data.meta_description or '—' }}</dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
+                <h2 class="h5 fw-bold mb-0"><i class="bi bi-hash me-2 text-primary"></i>Headings</h2>
+                <span class="badge rounded-pill text-bg-light">{{ data.counts.headings }} total</span>
+            </div>
+            <div class="card-body px-4 pb-4">
+                {% set h1 = data.headings.h1 %}
+                {% set h2 = data.headings.h2 %}
+                {% set h3 = data.headings.h3 %}
+                {% if h1 or h2 or h3 %}
+                    {% for t in h1 %}
+                        <div class="heading-line h1-line"><span class="badge bg-primary me-2">H1</span>{{ t }}</div>
+                    {% endfor %}
+                    {% for t in h2 %}
+                        <div class="heading-line h2-line"><span class="badge bg-info text-dark me-2">H2</span>{{ t }}</div>
+                    {% endfor %}
+                    {% for t in h3 %}
+                        <div class="heading-line h3-line"><span class="badge bg-secondary me-2">H3</span>{{ t }}</div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-secondary mb-0">No headings detected.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
+                <h2 class="h5 fw-bold mb-0"><i class="bi bi-text-paragraph me-2 text-primary"></i>Paragraphs</h2>
+                <span class="badge rounded-pill text-bg-light">{{ data.paragraphs_total }} sampled</span>
+            </div>
+            <div class="card-body px-4 pb-4">
+                {% if data.paragraphs %}
+                    {% for p in data.paragraphs[:DISPLAY_PARAS] %}
+                        <p class="result-para">{{ p }}</p>
+                    {% endfor %}
+                    {% if data.paragraphs|length > DISPLAY_PARAS %}
+                        <p class="text-secondary small mb-0">Showing first {{ DISPLAY_PARAS }} paragraphs. Full set included in CSV export (within server limits).</p>
+                    {% endif %}
+                {% else %}
+                    <p class="text-secondary mb-0">No paragraph text extracted.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
+                <h2 class="h5 fw-bold mb-0"><i class="bi bi-link-45deg me-2 text-primary"></i>Links</h2>
+                <span class="badge rounded-pill text-bg-light">{{ data.counts.links }} found</span>
+            </div>
+            <div class="card-body px-2 pb-2">
+                <div class="table-responsive rounded-3 border">
+                    <table class="table table-sm table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Text</th>
+                                <th>URL</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for link in data.links[:DISPLAY_LINKS] %}
+                                <tr>
+                                    <td class="small" style="max-width: 200px;">{{ link.text }}</td>
+                                    <td class="small text-break"><a href="{{ link.href }}" target="_blank" rel="noopener">{{ link.href }}</a></td>
+                                </tr>
+                            {% else %}
+                                <tr><td colspan="2" class="text-secondary px-3 py-3">No links found.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% if data.links|length > DISPLAY_LINKS %}
+                    <p class="text-secondary small px-2 pt-2 mb-0">Table shows first {{ DISPLAY_LINKS }} links.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
+                <h2 class="h5 fw-bold mb-0"><i class="bi bi-image me-2 text-primary"></i>Images</h2>
+                <span class="badge rounded-pill text-bg-light">{{ data.counts.images }} found</span>
+            </div>
+            <div class="card-body px-2 pb-2">
+                <div class="table-responsive rounded-3 border">
+                    <table class="table table-sm table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Alt</th>
+                                <th>Source</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for img in data.images[:DISPLAY_IMAGES] %}
+                                <tr>
+                                    <td class="small">{{ img.alt or '—' }}</td>
+                                    <td class="small text-break"><a href="{{ img.src }}" target="_blank" rel="noopener">{{ img.src }}</a></td>
+                                </tr>
+                            {% else %}
+                                <tr><td colspan="2" class="text-secondary px-3 py-3">No images found.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% if data.images|length > DISPLAY_IMAGES %}
+                    <p class="text-secondary small px-2 pt-2 mb-0">Table shows first {{ DISPLAY_IMAGES }} images.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm mb-4 seo-card">
+            <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+                <h2 class="h5 fw-bold mb-0"><i class="bi bi-speedometer2 me-2 text-warning"></i>SEO snapshot</h2>
+            </div>
+            <div class="card-body px-4 pb-4 text-center">
+                <div class="seo-ring mx-auto mb-3" style="--score: {{ data.seo.score }};">
+                    <span>{{ data.seo.score }}</span>
+                </div>
+                <p class="text-secondary small">Heuristic score based on title, meta, H1, content depth, internal links, and image alt usage (sampled).</p>
+                <ul class="list-group list-group-flush text-start small">
+                    {% for c in data.seo.checks %}
+                        <li class="list-group-item d-flex gap-2 align-items-start px-0">
+                            {% if c.ok %}
+                                <i class="bi bi-check-circle-fill text-success mt-1"></i>
+                            {% else %}
+                                <i class="bi bi-exclamation-circle-fill text-warning mt-1"></i>
+                            {% endif %}
+                            <span><strong>{{ c.label }}:</strong> {{ c.detail }}</span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+                <h2 class="h5 fw-bold mb-0"><i class="bi bi-keyboard me-2 text-primary"></i>Top keywords</h2>
+            </div>
+            <div class="card-body px-4 pb-4">
+                {% if data.keywords %}
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for kw in data.keywords %}
+                            <span class="badge rounded-pill keyword-pill">{{ kw.word }} <span class="opacity-75">×{{ kw.count }}</span></span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-secondary small mb-0">Not enough text for keyword insights.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+                <h2 class="h5 fw-bold mb-0"><i class="bi bi-envelope me-2 text-primary"></i>Emails</h2>
+            </div>
+            <div class="card-body px-4 pb-4">
+                {% if data.emails %}
+                    <ul class="list-unstyled mb-0 small">
+                        {% for e in data.emails %}
+                            <li class="mb-1"><i class="bi bi-dot"></i>{{ e }}</li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-secondary small mb-0">No email addresses matched common patterns.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+                <h2 class="h5 fw-bold mb-0"><i class="bi bi-telephone me-2 text-primary"></i>Phone numbers</h2>
+            </div>
+            <div class="card-body px-4 pb-4">
+                {% if data.phones %}
+                    <ul class="list-unstyled mb-0 small">
+                        {% for ph in data.phones %}
+                            <li class="mb-1"><i class="bi bi-dot"></i>{{ ph }}</li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-secondary small mb-0">No phone patterns detected in visible text.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endif %}
+{% endblock %}
+
+{% block inline_config %}
+<script>
+    window.SCRAPIQ_PLAIN = {{ data.plain_text | tojson }};
+    window.__SCRAPIQ_RESULT__ = true;
+</script>
+{% endblock %}
+
+{% block scripts %}
+{% endblock %}

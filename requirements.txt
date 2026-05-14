@@ -1,0 +1,7 @@
+# ScrapIQ — pin compatible ranges for reproducible college / portfolio builds
+flask>=3.0.0,<4
+werkzeug>=3.0.0,<4
+requests>=2.31.0,<3
+beautifulsoup4>=4.12.0,<5
+pandas>=2.0.0,<3
+lxml>=5.0.0,<6

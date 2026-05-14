@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<section class="hero-scrapiq rounded-4 p-4 p-lg-5 mb-4 text-center text-lg-start">
+    <div class="row align-items-center g-4">
+        <div class="col-lg-7">
+            <p class="text-uppercase small fw-semibold text-primary mb-2 tracking-wide">Smart Web Scraper &amp; Data Extractor</p>
+            <h1 class="display-5 fw-bold mb-3">
+                Welcome to <span class="brand-gradient">ScrapIQ</span>
+            </h1>
+            <p class="lead text-secondary mb-4">
+                Enter a public URL, pick a category, and choose which product-style fields to extract — or leave all boxes unchecked for the full classic ScrapIQ report (headings, SEO, keywords, and more).
+            </p>
+            <ul class="list-unstyled d-flex flex-wrap gap-3 small text-secondary mb-0">
+                <li><i class="bi bi-check-circle-fill text-success me-1"></i>JSON-LD &amp; heuristic product parsing</li>
+                <li><i class="bi bi-check-circle-fill text-success me-1"></i>CSV export of selected fields</li>
+                <li><i class="bi bi-check-circle-fill text-success me-1"></i>Responsive premium UI</li>
+            </ul>
+        </div>
+        <div class="col-lg-5">
+            <div class="card card-glass shadow-lg border-0 p-4">
+                <form action="{{ url_for('scrape_route') }}" method="post" id="scrapeForm" class="needs-validation" novalidate>
+                    <label for="urlInput" class="form-label fw-semibold">Website URL</label>
+                    <div class="input-group input-group-lg mb-3">
+                        <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-link-45deg"></i></span>
+                        <input type="text" class="form-control border-start-0" name="url" id="urlInput"
+                               placeholder="https://example.com" required autocomplete="url" maxlength="2048"
+                               inputmode="url" spellcheck="false">
+                        <div class="invalid-feedback">Please enter a valid website address.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="categorySelect" class="form-label fw-semibold">Category</label>
+                        <select class="form-select" name="category" id="categorySelect" aria-label="Product category">
+                            {% for c in ['Fashion', 'Shoes', 'Electronics', 'Furniture'] %}
+                                <option value="{{ c }}" {% if c == 'Electronics' %}selected{% endif %}>{{ c }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text small">Helps tune “similar items” heuristics for fashion and retail-style pages.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <span class="form-label fw-semibold d-block mb-2">Fields to scrape</span>
+                        <div class="row g-2 small" id="fieldCheckboxes">
+                            <div class="col-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="scrape_fields" value="product_name" id="f_name">
+                                    <label class="form-check-label" for="f_name">Product name</label>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="scrape_fields" value="images" id="f_img">
+                                    <label class="form-check-label" for="f_img">Images</label>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="scrape_fields" value="price" id="f_price">
+                                    <label class="form-check-label" for="f_price">Price</label>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="scrape_fields" value="brand" id="f_brand">
+                                    <label class="form-check-label" for="f_brand">Brand</label>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="scrape_fields" value="reviews" id="f_rev">
+                                    <label class="form-check-label" for="f_rev">Reviews</label>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="scrape_fields" value="description" id="f_desc">
+                                    <label class="form-check-label" for="f_desc">Description</label>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="scrape_fields" value="similar_products" id="f_sim">
+                                    <label class="form-check-label" for="f_sim">Similar products</label>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="scrape_fields" value="links" id="f_link">
+                                    <label class="form-check-label" for="f_link">Links</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-text small mt-1">Leave all unchecked for the <strong>full</strong> ScrapIQ analysis (headings, paragraphs, SEO, emails, etc.).</div>
+                    </div>
+
+                    <div class="mb-3 border rounded-3 p-3 bg-body-secondary bg-opacity-25 d-none" id="fashionExtras" aria-live="polite">
+                        <span class="small fw-semibold text-primary d-block mb-2"><i class="bi bi-bag-heart me-1"></i>Fashion extras</span>
+                        <div class="form-check mb-1">
+                            <input class="form-check-input" type="checkbox" name="fashion_same_dress" id="f_same_dress">
+                            <label class="form-check-label small" for="f_same_dress">Same dress — narrow similar picks to dress-style items</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="fashion_similar_dress" id="f_similar_dress">
+                            <label class="form-check-label small" for="f_similar_dress">Similar dress — broader clothing &amp; accessories in related sections</label>
+                        </div>
+                        <div class="form-text small mt-1 mb-0">These options add a focused pass over “related / similar” blocks (best-effort; depends on the store’s HTML).</div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-lg w-100 rounded-pill scrape-btn">
+                        <span class="me-2"><i class="bi bi-cloud-download"></i></span>Scrape now
+                    </button>
+                    <p class="text-secondary small mt-3 mb-0">
+                        Only scrape sites you are allowed to access. Custom extraction uses public HTML heuristics — results vary by site layout.
+                    </p>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="row g-4 mb-2">
+    <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm card-hover lift-card">
+            <div class="card-body">
+                <div class="icon-pill mb-3"><i class="bi bi-sliders"></i></div>
+                <h3 class="h5 fw-bold">Custom fields</h3>
+                <p class="text-secondary small mb-0">Pick only the columns you need — names, prices, images, similar products, and more.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm card-hover lift-card">
+            <div class="card-body">
+                <div class="icon-pill mb-3"><i class="bi bi-graph-up-arrow"></i></div>
+                <h3 class="h5 fw-bold">Keywords &amp; SEO</h3>
+                <p class="text-secondary small mb-0">Full mode keeps the SEO scorecard; custom mode scores from the text you pulled.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm card-hover lift-card">
+            <div class="card-body">
+                <div class="icon-pill mb-3"><i class="bi bi-clock-history"></i></div>
+                <h3 class="h5 fw-bold">History &amp; export</h3>
+                <p class="text-secondary small mb-0">Every run is saved to SQLite with CSV export of the returned dataset.</p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
